@@ -1,0 +1,3 @@
+go run .sisyphus/evidence/tmp_task6_template.go
+rendered_prompt=URL: https://test.com, Depth: 1, Links: a
+b

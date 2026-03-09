@@ -1,0 +1,12 @@
+=== Truncation Test ===
+Original length: 1471 characters
+Truncated length: 169 characters
+
+Truncated content (first 100 chars shown):
+Line 1: This is a test line with some content to make the string longer.
+Line 2: This is a test line...
+
+Verification:
+✓ Truncated length is acceptable (≤ 240 chars)
+✓ Truncation notice appended
+✓ Truncation notice has correct formatting

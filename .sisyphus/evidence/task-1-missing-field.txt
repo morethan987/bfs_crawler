@@ -1,0 +1,14 @@
+=== Task 1: Missing Required Field Test ===
+Date: 2026-03-09
+
+Test: Load config with missing api_key field
+Status: ✓ PASS (correctly rejected)
+
+Error Output:
+ERROR: config validation error: llm.api_key is required
+
+Evidence:
+- LoadConfig correctly rejects configs with missing required fields
+- Error message is clear and indicates which field is missing
+- Validation performs check after defaults are applied
+- Required fields validated: base_url, api_key, model, system_prompt, user_prompt_template

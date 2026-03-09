@@ -1,0 +1,14 @@
+grep -A5 'json_schema\|json_object' utils/llm.go | head -30
+case "json_schema":
+	responseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+		OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+			JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+				Name:   "llm_response",
+				Schema: c.schema,
+--
+case "json_object":
+	responseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+		OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
+	}
+default:
+	return nil, fmt.Errorf("unsupported json mode: %s", c.jsonMode)
