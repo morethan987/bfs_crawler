@@ -14,8 +14,8 @@ bfs_scraper/
 ├── utils/
 │   ├── types.go         # Shared types + GenerateSchema[T]
 │   ├── sanitize.go      # SanitizePath, BuildOutputPath, NormalizeURL
-│   ├── fetcher.go       # HTTP fetching + HTML link extraction
-│   ├── converter.go     # HTML→Markdown conversion
+│   ├── fetcher.go       # HTTP fetching with retry and content-type detection
+│   ├── converter.go     # HTML→Markdown conversion + link annotation
 │   ├── llm.go           # OpenAI-compatible LLM client
 │   └── crawler.go       # BFS engine (concurrent workers)
 ├── config.example.yaml  # Fully documented config template
@@ -106,7 +106,7 @@ type LLMResponse struct {
 ### Naming Conventions
 
 - **Constructors**: `NewXxx(params) *Xxx` or `NewXxx(params) (*Xxx, error)`.
-- **Methods**: verb-first, e.g., `Fetch`, `Convert`, `Analyze`, `ExtractLinks`.
+- **Methods**: verb-first, e.g., `Fetch`, `Convert`, `Analyze`, `AnnotateLinks`.
 - **Config fields**: PascalCase in Go, `snake_case` in YAML tags.
 - **Local variables**: short and clear — `cfg`, `conv`, `llmResp`, `htmlBody`, `rawURL`.
 - **Unexported helpers**: lowercase, e.g., `doFetch`, `callLLM`.
