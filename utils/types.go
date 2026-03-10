@@ -12,6 +12,22 @@ type QueueItem struct {
 	ParentPath string // filesystem path of parent (e.g., "output/tsinghua/AI")
 	FolderName string // LLM-suggested folder name for this item
 	FileName   string // LLM-suggested file name for this item
+	Reason     string // LLM reason for enqueuing this link (context propagation)
+}
+
+// FetchResult holds the HTTP response body and detected content type.
+type FetchResult struct {
+	Body        []byte
+	ContentType string // e.g. "text/html", "application/pdf"
+	IsHTML      bool   // true if Content-Type indicates HTML
+}
+
+// LinkRef represents an annotated link reference within converted markdown.
+// Each link in the content is tagged with an ID (e.g., ⟨L1⟩) and resolved here.
+type LinkRef struct {
+	ID         string // e.g. "L1", "L2"
+	URL        string // normalized absolute URL
+	AnchorText string // original anchor text (empty for bare URLs)
 }
 
 // LLMResponse is the structured JSON response from the LLM
@@ -22,19 +38,11 @@ type LLMResponse struct {
 }
 
 type LinkItem struct {
-	URL        string `json:"url"`
-	FolderName string `json:"folder_name"`
-	FileName   string `json:"file_name"`
-	Reason     string `json:"reason"`
-}
-
-// PageResult holds the processing result of a single page
-type PageResult struct {
-	URL      string
-	Markdown string
-	Links    []string // extracted <a href> links from HTML
-	LLMResp  *LLMResponse
-	SavePath string
+	LinkID         string `json:"link_id"`
+	FolderName     string `json:"folder_name"`
+	FileName       string `json:"file_name"`
+	Reason         string `json:"reason"`
+	RelevanceScore int    `json:"relevance_score"`
 }
 
 // GenerateSchema generates a JSON schema map from a Go type T.
