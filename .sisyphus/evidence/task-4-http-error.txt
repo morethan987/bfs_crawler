@@ -1,3 +1,0 @@
-Error: fetch failed after 1 retries: HTTP error: 500 500 Internal Server Error
-
-✅ PASS: Error message contains '500' from HTTP status code

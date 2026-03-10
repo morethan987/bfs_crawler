@@ -1,4 +1,4 @@
-# bfs_scraper
+# bfs_crawler
 
 **LLM 驱动的 BFS 网页爬虫** — 自动抓取网页、转换为 Markdown，并由大语言模型决策链接入队顺序，将结果以层级目录结构保存到本地。
 
@@ -201,17 +201,17 @@ LLM 返回的链接经过两层代码级过滤，防止爬虫偏离目标：
 ### 1. 编译
 
 ```bash
-git clone https://github.com/morethan/bfs_scraper
-cd bfs_scraper
+git clone https://github.com/morethan/bfs_crawler
+cd bfs_crawler
 
 # 动态链接编译
-go build -o target/bfs_scraper ./cmd/...
+go build -o target/bfs_crawler ./cmd/...
 
 # 静态链接编译
-CGO_ENABLED=0 go build -o target/bfs_scraper ./cmd/...
+CGO_ENABLED=0 go build -o target/bfs_crawler ./cmd/...
 
 # 交叉编译 for windows
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o target/bfs_scraper.exe ./cmd/...
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o target/bfs_crawler.exe ./cmd/...
 ```
 
 ### 2. 配置
@@ -224,13 +224,13 @@ cp config.example.yaml config.yaml
 ### 3. 运行
 
 ```bash
-./bfs_scraper -config config.yaml https://example.com/target-page
+./bfs_crawler -config config.yaml https://example.com/target-page
 ```
 
 支持多个种子 URL：
 
 ```bash
-./bfs_scraper -config config.yaml https://site.com/page1 https://site.com/page2
+./bfs_crawler -config config.yaml https://site.com/page1 https://site.com/page2
 ```
 
 按 `Ctrl+C` 可优雅退出（等待当前页面处理完成后停止）。
@@ -347,7 +347,7 @@ output/
 ## 命令行参数
 
 ```
-./bfs_scraper -config <配置文件路径> <种子URL> [种子URL...]
+./bfs_crawler -config <配置文件路径> <种子URL> [种子URL...]
 ```
 
 | 参数 | 说明 |

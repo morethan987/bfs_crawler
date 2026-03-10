@@ -1,49 +1,49 @@
 # LLM configuration
 llm:
-  base_url: "https://api.openai.com/v1"   # OpenAI-compatible endpoint (Ollama: http://localhost:11434/v1)
-  api_key: "sk-your-key-here"              # API key (use any string for Ollama)
-  model: "gpt-4o"                          # Model name
-  max_content_length: 32000                # Max chars of page content sent to LLM
-  json_mode: "json_schema"                 # "json_schema" (OpenAI) or "json_object" (Ollama/others)
-  max_retries: 3                           # LLM call retry count
+  base_url: "https://api.deepseek.com/v1" # OpenAI-compatible endpoint (Ollama: http://localhost:11434/v1)
+  api_key: "sk-your-key-here" # API key (use any string for Ollama)
+  model: "deepseek-chat" # Model name
+  max_content_length: 32000 # Max chars of page content sent to LLM
+  json_mode: "json_object" # "json_schema" (OpenAI) or "json_object" (Ollama/others)
+  max_retries: 3 # LLM call retry count
 
 # BFS crawling parameters
 bfs:
-  max_depth: 2                             # Max link depth from seed (0 = seed only)
-  max_pages: 100                           # Max total pages to crawl
-  concurrency: 3                           # Number of concurrent crawl workers
-  min_relevance_score: 60                  # Minimum LLM relevance score (0-100) to enqueue a link
-  max_links_per_page: 5                    # Max links to enqueue per page (top N by score)
-  allowed_domains:                         # Whitelist of domains to crawl (empty = all domains)
+  max_depth: 2 # Max link depth from seed (0 = seed only)
+  max_pages: 100 # Max total pages to crawl
+  concurrency: 3 # Number of concurrent crawl workers
+  min_relevance_score: 60 # Minimum LLM relevance score (0-100) to enqueue a link
+  max_links_per_page: 5 # Max links to enqueue per page (top N by score)
+  allowed_domains: # Whitelist of domains to crawl (empty = all domains)
     - "example.com"
 
 # HTTP client settings
 http:
-  user_agent: "BFS-Scraper/1.0"           # User-Agent header
-  timeout: 30                              # HTTP request timeout in seconds
-  delay: 1000                              # Delay between requests in milliseconds
-  max_retries: 3                           # HTTP retry count on failure
+  user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" # User-Agent header
+  timeout: 30 # HTTP request timeout in seconds
+  delay: 1000 # Delay between requests in milliseconds
+  max_retries: 3 # HTTP retry count on failure
 
 # LLM prompt configuration
 prompt:
   system_prompt: |
-    You are a STRICT relevance-focused web page analyzer for a BFS web scraper.
-    
+    You are a STRICT relevance-focused web page analyzer for a BFS web crawler.
+
     Your ONLY job is to:
     1. Write a concise summary (2-4 sentences) of the page content
     2. Select ONLY links that are DIRECTLY relevant to the user's stated goal
     3. For each selected link, provide its link_id, a reason, a relevance_score (0-100), a safe folder_name (snake_case), and a file_name
-    
+
     LINK MARKERS:
     The page content contains inline link markers in the format ⟨Lxx⟩ (e.g., ⟨L1⟩, ⟨L2⟩, ⟨L15⟩).
     Each marker appears right after a link in the text, tagging that link with a unique ID.
     When selecting links, you MUST use the link_id (e.g., "L1", "L5") from these markers.
     Do NOT output raw URLs — only use the link_id.
-    
+
     CONTEXT PROPAGATION:
     If a "Parent Reason" is provided, it explains why this page was selected for crawling.
     Use it as context to understand what information the crawler is seeking on this page.
-    
+
     STRICT RULES:
     - IGNORE navigation links, footer links, sidebar links, and generic site-wide links
     - IGNORE links to unrelated people, departments, or topics — even if they appear on the same page
@@ -56,7 +56,7 @@ prompt:
     - Each link MUST include a relevance_score from 0 to 100 (100 = perfectly on-goal)
     - Only include links with relevance_score >= 60
     - Return at most 5 links per page (fewer is better)
-    
+
     Return JSON with exactly this structure:
     {
       "summary": "Brief description of the page",
@@ -67,17 +67,18 @@ prompt:
   user_prompt_template: |
     Page URL: {{.URL}}
     Crawl Depth: {{.Depth}}{{if .ParentReason}}
-    
+
     ## Parent Reason
     This page was selected for crawling because: {{.ParentReason}}{{end}}
-    
+
     ## Page Content (links are tagged with ⟨Lxx⟩ markers)
     {{.Content}}
-    
+
     Select ONLY the links (by their ⟨Lxx⟩ link_id) that are directly relevant to the user's goal below.
     Be strict — quality over quantity. If unsure, do NOT include the link.
-    
+
     User's goal: [REPLACE WITH YOUR SPECIFIC GOAL]
+
 # Output configuration
 output:
-  base_dir: "output"                       # Root output directory for scraped markdown files
+  base_dir: "output" # Root output directory for scraped markdown files

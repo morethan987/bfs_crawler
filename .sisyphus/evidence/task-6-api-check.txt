@@ -1,5 +1,0 @@
-grep -n "Responses.New" utils/llm.go || true
-(no matches)
-
-grep -n "Chat.Completions.New" utils/llm.go
-107: resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{

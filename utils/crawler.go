@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/morethan/bfs_scraper/config"
+	"github.com/morethan/bfs_crawler/config"
 )
 
 type Crawler struct {

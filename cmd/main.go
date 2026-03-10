@@ -10,8 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/morethan/bfs_scraper/config"
-	"github.com/morethan/bfs_scraper/utils"
+	"github.com/morethan/bfs_crawler/config"
+	"github.com/morethan/bfs_crawler/utils"
 )
 
 //go:embed config.example.yaml
@@ -19,46 +19,46 @@ var exampleConfigFS embed.FS
 
 const version = "0.1.0"
 
-const usage = `bfs_scraper — LLM-driven BFS web scraper
+const usage = `bfs_crawler — LLM-driven BFS web crawler
 
 USAGE:
-    bfs_scraper <command> [options]
+    bfs_crawler <command> [options]
 
 COMMANDS:
     crawl   Start crawling from one or more seed URLs
     init    Write an example config file to disk
 
-Run 'bfs_scraper <command> -help' for command-specific options.
+Run 'bfs_crawler <command> -help' for command-specific options.
 
 QUICK START:
-    bfs_scraper init                        # create config.yaml from template
+    bfs_crawler init                        # create config.yaml from template
     # edit config.yaml — set API key, model, goal
-    bfs_scraper crawl https://example.com   # start crawling
+    bfs_crawler crawl https://example.com   # start crawling
 
 VERSION:
     ` + version + `
 `
 
-const crawlUsage = `bfs_scraper crawl — crawl from one or more seed URLs
+const crawlUsage = `bfs_crawler crawl — crawl from one or more seed URLs
 
 USAGE:
-    bfs_scraper crawl [options] <url> [url...]
+    bfs_crawler crawl [options] <url> [url...]
 
 OPTIONS:
     -config <path>   Path to config YAML file (default: config.yaml)
     -help            Show this help
 
 EXAMPLES:
-    bfs_scraper crawl https://example.com/about
-    bfs_scraper crawl -config my.yaml https://site.com/a https://site.com/b
+    bfs_crawler crawl https://example.com/about
+    bfs_crawler crawl -config my.yaml https://site.com/a https://site.com/b
 
 Press Ctrl+C to stop gracefully (waits for the current page to finish).
 `
 
-const initUsage = `bfs_scraper init — write an example config file
+const initUsage = `bfs_crawler init — write an example config file
 
 USAGE:
-    bfs_scraper init [options]
+    bfs_crawler init [options]
 
 OPTIONS:
     -out <path>   Output path for the config file (default: config.yaml)
@@ -66,9 +66,9 @@ OPTIONS:
     -help         Show this help
 
 EXAMPLES:
-    bfs_scraper init                  # writes config.yaml in current directory
-    bfs_scraper init -out my.yaml     # writes to my.yaml
-    bfs_scraper init -force           # overwrite existing config.yaml
+    bfs_crawler init                  # writes config.yaml in current directory
+    bfs_crawler init -out my.yaml     # writes to my.yaml
+    bfs_crawler init -force           # overwrite existing config.yaml
 `
 
 func main() {
@@ -83,7 +83,7 @@ func main() {
 	case "init":
 		runInit(os.Args[2:])
 	case "-version", "--version", "version":
-		fmt.Println("bfs_scraper version", version)
+		fmt.Println("bfs_crawler version", version)
 	case "-help", "--help", "help", "-h":
 		fmt.Print(usage)
 	default:
@@ -157,5 +157,5 @@ func runInit(args []string) {
 	fmt.Printf("Config written to %q\n", *outPath)
 	fmt.Println("Next steps:")
 	fmt.Println("  1. Open the file and set your LLM API key, model, and goal")
-	fmt.Printf("  2. Run: bfs_scraper crawl -config %s <seed-url>\n", *outPath)
+	fmt.Printf("  2. Run: bfs_crawler crawl -config %s <seed-url>\n", *outPath)
 }

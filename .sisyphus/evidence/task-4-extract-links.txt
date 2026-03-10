@@ -1,7 +1,0 @@
-Base URL: https://example.com
-HTML: <html><body><a href="/relative">r</a><a href="https://absolute.com/page">a</a></body></html>
-Extracted 2 links:
-  [0] https://example.com/relative
-  [1] https://absolute.com/page
-
-✅ PASS: Relative link resolved to absolute, absolute link preserved

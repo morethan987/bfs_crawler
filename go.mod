@@ -1,4 +1,4 @@
-module github.com/morethan/bfs_scraper
+module github.com/morethan/bfs_crawler
 
 go 1.26.1
 

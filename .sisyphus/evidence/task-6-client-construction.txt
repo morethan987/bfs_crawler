@@ -1,2 +1,0 @@
-go run .sisyphus/evidence/tmp_task6_client.go
-LLMClient construction OK

@@ -1,6 +1,6 @@
-# AGENTS.md — BFS LLM Scraper
+# AGENTS.md — BFS LLM crawler
 
-Coding agent reference for the `github.com/morethan/bfs_scraper` project.
+Coding agent reference for the `github.com/morethan/bfs_crawler` project.
 Go 1.26.1 · No test suite · No Makefile · No CI config.
 
 ---
@@ -8,7 +8,7 @@ Go 1.26.1 · No test suite · No Makefile · No CI config.
 ## Project Layout
 
 ```
-bfs_scraper/
+bfs_crawler/
 ├── cmd/main.go          # CLI entry point (package main)
 ├── config/config.go     # Config structs + LoadConfig (package config)
 ├── utils/
@@ -19,7 +19,7 @@ bfs_scraper/
 │   ├── llm.go           # OpenAI-compatible LLM client
 │   └── crawler.go       # BFS engine (concurrent workers)
 ├── config.example.yaml  # Fully documented config template
-├── go.mod               # module github.com/morethan/bfs_scraper
+├── go.mod               # module github.com/morethan/bfs_crawler
 └── go.sum
 ```
 
@@ -34,7 +34,7 @@ bfs_scraper/
 go build ./...
 
 # Build binary
-go build -o bfs_scraper ./cmd/...
+go build -o bfs_crawler ./cmd/...
 
 # Vet (run after every change)
 go vet ./...
@@ -43,7 +43,7 @@ go vet ./...
 go build -race ./...
 
 # Run
-./bfs_scraper -config config.yaml https://example.com
+./bfs_crawler -config config.yaml https://example.com
 
 # Add a dependency
 go get github.com/some/pkg
