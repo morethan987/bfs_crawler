@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"log"
@@ -13,13 +14,96 @@ import (
 	"github.com/morethan/bfs_scraper/utils"
 )
 
-func main() {
-	configPath := flag.String("config", "config.yaml", "path to config YAML file")
-	flag.Parse()
+//go:embed config.example.yaml
+var exampleConfigFS embed.FS
 
-	seedURLs := flag.Args()
+const version = "0.1.0"
+
+const usage = `bfs_scraper — LLM-driven BFS web scraper
+
+USAGE:
+    bfs_scraper <command> [options]
+
+COMMANDS:
+    crawl   Start crawling from one or more seed URLs
+    init    Write an example config file to disk
+
+Run 'bfs_scraper <command> -help' for command-specific options.
+
+QUICK START:
+    bfs_scraper init                        # create config.yaml from template
+    # edit config.yaml — set API key, model, goal
+    bfs_scraper crawl https://example.com   # start crawling
+
+VERSION:
+    ` + version + `
+`
+
+const crawlUsage = `bfs_scraper crawl — crawl from one or more seed URLs
+
+USAGE:
+    bfs_scraper crawl [options] <url> [url...]
+
+OPTIONS:
+    -config <path>   Path to config YAML file (default: config.yaml)
+    -help            Show this help
+
+EXAMPLES:
+    bfs_scraper crawl https://example.com/about
+    bfs_scraper crawl -config my.yaml https://site.com/a https://site.com/b
+
+Press Ctrl+C to stop gracefully (waits for the current page to finish).
+`
+
+const initUsage = `bfs_scraper init — write an example config file
+
+USAGE:
+    bfs_scraper init [options]
+
+OPTIONS:
+    -out <path>   Output path for the config file (default: config.yaml)
+    -force        Overwrite the file if it already exists
+    -help         Show this help
+
+EXAMPLES:
+    bfs_scraper init                  # writes config.yaml in current directory
+    bfs_scraper init -out my.yaml     # writes to my.yaml
+    bfs_scraper init -force           # overwrite existing config.yaml
+`
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Fprint(os.Stderr, usage)
+		os.Exit(1)
+	}
+
+	switch os.Args[1] {
+	case "crawl":
+		runCrawl(os.Args[2:])
+	case "init":
+		runInit(os.Args[2:])
+	case "-version", "--version", "version":
+		fmt.Println("bfs_scraper version", version)
+	case "-help", "--help", "help", "-h":
+		fmt.Print(usage)
+	default:
+		fmt.Fprintf(os.Stderr, "unknown command: %q\n\n%s", os.Args[1], usage)
+		os.Exit(1)
+	}
+}
+
+func runCrawl(args []string) {
+	fs := flag.NewFlagSet("crawl", flag.ContinueOnError)
+	fs.Usage = func() { fmt.Fprint(os.Stderr, crawlUsage) }
+	configPath := fs.String("config", "config.yaml", "path to config YAML file")
+
+	if err := fs.Parse(args); err != nil {
+		os.Exit(1)
+	}
+
+	seedURLs := fs.Args()
 	if len(seedURLs) == 0 {
-		fmt.Fprintf(os.Stderr, "Usage: bfs_scraper -config <config.yaml> <seed_url> [seed_url...]\n")
+		fmt.Fprint(os.Stderr, crawlUsage)
 		os.Exit(1)
 	}
 
@@ -42,4 +126,36 @@ func main() {
 	}
 
 	log.Printf("Scraping complete.")
+}
+
+func runInit(args []string) {
+	fs := flag.NewFlagSet("init", flag.ContinueOnError)
+	fs.Usage = func() { fmt.Fprint(os.Stderr, initUsage) }
+	outPath := fs.String("out", "config.yaml", "output path for the config file")
+	force := fs.Bool("force", false, "overwrite if file already exists")
+
+	if err := fs.Parse(args); err != nil {
+		os.Exit(1)
+	}
+
+	if !*force {
+		if _, err := os.Stat(*outPath); err == nil {
+			fmt.Fprintf(os.Stderr, "error: %q already exists (use -force to overwrite)\n", *outPath)
+			os.Exit(1)
+		}
+	}
+
+	data, err := exampleConfigFS.ReadFile("config.example.yaml")
+	if err != nil {
+		log.Fatalf("Failed to read embedded config template: %v", err)
+	}
+
+	if err := os.WriteFile(*outPath, data, 0644); err != nil {
+		log.Fatalf("Failed to write config file: %v", err)
+	}
+
+	fmt.Printf("Config written to %q\n", *outPath)
+	fmt.Println("Next steps:")
+	fmt.Println("  1. Open the file and set your LLM API key, model, and goal")
+	fmt.Printf("  2. Run: bfs_scraper crawl -config %s <seed-url>\n", *outPath)
 }
