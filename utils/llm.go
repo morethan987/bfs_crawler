@@ -47,18 +47,18 @@ func NewLLMClient(baseURL, apiKey, model, jsonMode string, maxRetries int, syste
 }
 
 type templateData struct {
-	URL     string
-	Depth   int
-	Content string
-	Links   string
+	URL          string
+	Depth        int
+	Content      string
+	ParentReason string
 }
 
-func (c *LLMClient) Analyze(ctx context.Context, pageURL string, depth int, markdown string, links []string) (*LLMResponse, error) {
+func (c *LLMClient) Analyze(ctx context.Context, pageURL string, depth int, annotatedMarkdown string, parentReason string) (*LLMResponse, error) {
 	data := templateData{
-		URL:     pageURL,
-		Depth:   depth,
-		Content: markdown,
-		Links:   strings.Join(links, "\n"),
+		URL:          pageURL,
+		Depth:        depth,
+		Content:      annotatedMarkdown,
+		ParentReason: parentReason,
 	}
 	var buf bytes.Buffer
 	if err := c.userTmpl.Execute(&buf, data); err != nil {
