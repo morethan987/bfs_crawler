@@ -52,7 +52,9 @@ archives:
     # Include useful extra files in the archive
     files:
       - src: README.md
-      - src: config.example.yaml
+      - src: cmd/config.example.yaml
+        dst: config.example.yaml
+        strip_parent: true
 
 checksum:
   name_template: "checksums.txt"
