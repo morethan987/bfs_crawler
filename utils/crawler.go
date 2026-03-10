@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -173,32 +174,68 @@ func (c *Crawler) processPage(ctx context.Context, item QueueItem) error {
 
 	log.Printf("[Processing] depth=%d %s", item.Depth, item.URL)
 
-	html, err := c.fetcher.Fetch(item.URL)
+	result, err := c.fetcher.Fetch(item.URL)
 	if err != nil {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
 
-	links, err := c.fetcher.ExtractLinks(html, item.URL)
-	if err != nil {
-		log.Printf("[WARN] link extraction failed for %s: %v", item.URL, err)
-		links = []string{}
+	// Route based on Content-Type
+	if !result.IsHTML {
+		return c.handleNonHTML(result, item)
 	}
 
-	markdown, err := c.converter.Convert(html, item.URL)
+	return c.handleHTML(ctx, result, item)
+}
+
+// handleNonHTML saves downloadable files directly and skips unknown content types.
+// Downloads do not count toward max_pages.
+func (c *Crawler) handleNonHTML(result *FetchResult, item QueueItem) error {
+	// Decrement page count — downloads don't count toward max_pages
+	atomic.AddInt32(&c.pageCount, -1)
+
+	if IsDownloadableContentType(result.ContentType) {
+		ext := ExtensionFromContentType(result.ContentType, item.URL)
+		if ext == "" {
+			ext = ".bin"
+		}
+		outputPath := BuildOutputPath(c.cfg.Output.BaseDir, item.ParentPath, item.FolderName, item.FileName)
+		filePath := outputPath + ext
+		if err := os.WriteFile(filePath, result.Body, 0644); err != nil {
+			return fmt.Errorf("failed to save file: %w", err)
+		}
+		log.Printf("[Downloaded] %s (%s) -> %s", item.URL, result.ContentType, filePath)
+		return nil
+	}
+
+	// Unknown content type — skip
+	log.Printf("[SKIP] unsupported content type %q for %s", result.ContentType, item.URL)
+	return nil
+}
+
+// handleHTML processes an HTML page: convert to markdown, annotate links, save, LLM analyze, enqueue.
+func (c *Crawler) handleHTML(ctx context.Context, result *FetchResult, item QueueItem) error {
+	htmlBody := string(result.Body)
+
+	markdown, err := c.converter.Convert(htmlBody, item.URL)
 	if err != nil {
 		return fmt.Errorf("HTML conversion failed: %w", err)
 	}
 
+	// Annotate links in markdown with IDs (⟨L1⟩, ⟨L2⟩, ...)
+	// Links stay in their natural page context for better LLM comprehension
+	annotated, linkRefs := c.converter.AnnotateLinks(markdown)
+
 	outputPath := BuildOutputPath(c.cfg.Output.BaseDir, item.ParentPath, item.FolderName, item.FileName)
 	mdPath := outputPath + ".md"
-	if err := os.WriteFile(mdPath, []byte(markdown), 0644); err != nil {
+	metadata := fmt.Sprintf("---\nsource_url: %s\ndepth: %d\ncrawl_time: %s\n---\n\n", item.URL, item.Depth, time.Now().Format(time.RFC3339))
+	if err := os.WriteFile(mdPath, []byte(metadata+markdown), 0644); err != nil {
 		return fmt.Errorf("failed to save markdown: %w", err)
 	}
 	log.Printf("[Saved] %s", mdPath)
 
-	truncated := c.converter.TruncateContent(markdown, c.cfg.LLM.MaxContentLength)
+	truncated := c.converter.TruncateContent(annotated, c.cfg.LLM.MaxContentLength)
 
-	llmResp, err := c.llm.Analyze(ctx, item.URL, item.Depth, truncated, links)
+	llmResp, err := c.llm.Analyze(ctx, item.URL, item.Depth, truncated, item.Reason)
 	if err != nil {
 		log.Printf("[WARN] LLM analysis failed for %s: %v", item.URL, err)
 		return nil
@@ -211,15 +248,60 @@ func (c *Crawler) processPage(ctx context.Context, item QueueItem) error {
 	}
 
 	if item.Depth < c.cfg.BFS.MaxDepth {
-		childPath := filepath.Join(item.ParentPath, SanitizePath(item.FolderName))
-		childItems := make([]QueueItem, 0, len(llmResp.Links))
+		// Build link ref lookup map
+		refMap := make(map[string]LinkRef, len(linkRefs))
+		for _, ref := range linkRefs {
+			refMap[ref.ID] = ref
+		}
+
+		// Filter links by relevance score
+		minScore := c.cfg.BFS.MinRelevanceScore
+		maxLinks := c.cfg.BFS.MaxLinksPerPage
+
+		// Depth-based tightening: reduce max links and increase min score at deeper levels
+		if item.Depth >= 3 {
+			minScore = max(minScore, 70)
+			maxLinks = max(1, maxLinks/2)
+		}
+		if item.Depth >= 4 {
+			minScore = max(minScore, 80)
+			maxLinks = 1
+		}
+
+		// Filter by score threshold and resolve link IDs
+		var qualified []LinkItem
 		for _, link := range llmResp.Links {
+			if _, exists := refMap[link.LinkID]; !exists {
+				log.Printf("[WARN] LLM returned unknown link_id %q for %s, skipping", link.LinkID, item.URL)
+				continue
+			}
+			if link.RelevanceScore >= minScore {
+				qualified = append(qualified, link)
+			} else {
+				log.Printf("[SKIP] link %s score=%d < min=%d for %s", link.LinkID, link.RelevanceScore, minScore, item.URL)
+			}
+		}
+
+		// Sort by score descending and take top N
+		sort.Slice(qualified, func(i, j int) bool {
+			return qualified[i].RelevanceScore > qualified[j].RelevanceScore
+		})
+		if len(qualified) > maxLinks {
+			qualified = qualified[:maxLinks]
+		}
+
+		childPath := filepath.Join(item.ParentPath, SanitizePath(item.FolderName))
+		childItems := make([]QueueItem, 0, len(qualified))
+		for _, link := range qualified {
+			ref := refMap[link.LinkID]
+			log.Printf("[Enqueue] %s score=%d reason=%q %s", link.LinkID, link.RelevanceScore, link.Reason, ref.URL)
 			childItems = append(childItems, QueueItem{
-				URL:        link.URL,
+				URL:        ref.URL,
 				Depth:      item.Depth + 1,
 				ParentPath: childPath,
 				FolderName: link.FolderName,
 				FileName:   link.FileName,
+				Reason:     link.Reason,
 			})
 		}
 		c.enqueue(childItems)

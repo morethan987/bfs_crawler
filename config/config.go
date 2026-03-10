@@ -24,10 +24,12 @@ type LLMConfig struct {
 }
 
 type BFSConfig struct {
-	MaxDepth       int      `yaml:"max_depth"`
-	MaxPages       int      `yaml:"max_pages"`
-	Concurrency    int      `yaml:"concurrency"`
-	AllowedDomains []string `yaml:"allowed_domains"`
+	MaxDepth          int      `yaml:"max_depth"`
+	MaxPages          int      `yaml:"max_pages"`
+	Concurrency       int      `yaml:"concurrency"`
+	AllowedDomains    []string `yaml:"allowed_domains"`
+	MinRelevanceScore int      `yaml:"min_relevance_score"`
+	MaxLinksPerPage   int      `yaml:"max_links_per_page"`
 }
 
 type HTTPConfig struct {
@@ -70,6 +72,12 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if cfg.BFS.Concurrency == 0 {
 		cfg.BFS.Concurrency = 3
+	}
+	if cfg.BFS.MinRelevanceScore == 0 {
+		cfg.BFS.MinRelevanceScore = 60
+	}
+	if cfg.BFS.MaxLinksPerPage == 0 {
+		cfg.BFS.MaxLinksPerPage = 5
 	}
 	if cfg.HTTP.Timeout == 0 {
 		cfg.HTTP.Timeout = 30
