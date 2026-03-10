@@ -39,8 +39,6 @@ builds:
 
 archives:
   - id: bfs_crawler
-    builds:
-      - bfs_crawler
     # Use .zip for Windows, .tar.gz for everything else
     format_overrides:
       - goos: windows
@@ -53,8 +51,8 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
     # Include useful extra files in the archive
     files:
-      - README.md
-      - config.example.yaml
+      - src: README.md
+      - src: config.example.yaml
 
 checksum:
   name_template: "checksums.txt"
@@ -62,7 +60,7 @@ checksum:
 
 changelog:
   sort: asc
-  use: github
+  use: git
   filters:
     exclude:
       - "^docs:"
