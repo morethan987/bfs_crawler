@@ -17,9 +17,9 @@ import (
 //go:embed config.example.yaml
 var exampleConfigFS embed.FS
 
-const version = "0.1.0"
+var version = "0.1.0"
 
-const usage = `bfs_crawler — LLM-driven BFS web crawler
+var usage = `bfs_crawler — LLM-driven BFS web crawler
 
 USAGE:
     bfs_crawler <command> [options]
